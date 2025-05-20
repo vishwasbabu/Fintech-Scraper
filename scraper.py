@@ -16,6 +16,9 @@ import time
 import urllib.request
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
+USER_AGENT = "Mozilla/5.0 (FintechScraper/1.0)"
+HEADERS = {"User-Agent": USER_AGENT}
+
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "scraped_data")
 TRACK_FILE = "downloaded.json"
@@ -190,7 +193,8 @@ def save_history(company_dir: str, history: dict) -> None:
 
 
 def download_file(url: str, dest: str) -> None:
-    with urllib.request.urlopen(url) as resp, open(dest, "wb") as out:
+    req = urllib.request.Request(url, headers=HEADERS)
+    with urllib.request.urlopen(req) as resp, open(dest, "wb") as out:
         out.write(resp.read())
 
 
@@ -214,7 +218,8 @@ def scrape_company(company: dict) -> None:
     history = load_history(company_dir)
 
     try:
-        with urllib.request.urlopen(ir_url) as resp:
+        req = urllib.request.Request(ir_url, headers=HEADERS)
+        with urllib.request.urlopen(req) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
     except Exception as e:
         print(f"Failed to download {ir_url}: {e}")

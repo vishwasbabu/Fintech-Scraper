@@ -74,3 +74,7 @@ uvicorn app:app --reload --port 8000
 Open `http://localhost:8000/` in a browser to browse available companies and their files. Market data for public tickers is fetched from Yahoo Finance.
 
 Note: the `push_to_chatgpt` function in `scraper.py` is a placeholder for pushing downloaded files to a custom ChatGPT instance.
+
+## Troubleshooting
+
+If you receive HTTP 403 errors when running the scraper, some sites may block requests without a browser-like user agent. The tool includes a default `User-Agent` header, but you can edit `USER_AGENT` in `scraper.py` if downloads continue to fail.
