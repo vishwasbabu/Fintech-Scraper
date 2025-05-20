@@ -18,6 +18,12 @@ from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
 import logging
 
+try:
+    from playwright.sync_api import sync_playwright
+    PLAYWRIGHT_AVAILABLE = True
+except Exception:  # ImportError or other runtime issue
+    PLAYWRIGHT_AVAILABLE = False
+
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -35,7 +41,8 @@ COMPANIES = [
     {
         "name": "Dave Inc.",
         "ticker": "DAVE",
-        "ir": "https://investors.dave.com/",
+        # Use results page directly as main site is slow to load
+        "ir": "https://investors.dave.com/financial-information/quarterly-results",
     },
     {
         "name": "SoFi Technologies",
@@ -216,6 +223,27 @@ def download_file(url: str, dest: str) -> None:
         raise
 
 
+def fetch_links_playwright(url: str) -> list[str]:
+    """Use Playwright to fetch links from pages that require JavaScript."""
+    if not PLAYWRIGHT_AVAILABLE:
+        raise RuntimeError("Playwright not installed")
+    logger.debug(f"Fetching links via Playwright from {url}")
+    links: list[str] = []
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.goto(url, timeout=60000)
+        page.wait_for_selector("a", timeout=60000)
+        handles = page.query_selector_all("a")
+        for handle in handles:
+            href = handle.get_attribute("href")
+            if href and ("pdf" in href.lower() or "quarterly" in href.lower()):
+                links.append(href)
+        browser.close()
+    logger.debug(f"Playwright found {len(links)} links")
+    return links
+
+
 def push_to_chatgpt(path: str) -> None:
     """Placeholder for pushing files to custom ChatGPT."""
     logger.info(f"[CHATGPT] Would push {path}")
@@ -236,6 +264,7 @@ def scrape_company(company: dict) -> None:
         json.dump(meta, f)
     history = load_history(company_dir)
 
+    html = None
     try:
         logger.debug(f"Requesting IR page {ir_url}")
         req = urllib.request.Request(ir_url, headers=HEADERS)
@@ -244,14 +273,25 @@ def scrape_company(company: dict) -> None:
         logger.debug(f"Downloaded {len(html)} bytes from {ir_url}")
     except Exception as e:
         logger.error(f"Failed to download {ir_url}: {e}")
+
+    links = []
+    if html:
+        parser = LinkParser()
+        parser.feed(html)
+        logger.debug(f"Found {len(parser.links)} links on IR page")
+        links = parser.links
+
+    if not links and PLAYWRIGHT_AVAILABLE:
+        try:
+            links = fetch_links_playwright(ir_url)
+        except Exception as e:
+            logger.error(f"Playwright scraping failed for {ir_url}: {e}")
+            return
+    elif not links:
         return
 
-    parser = LinkParser()
-    parser.feed(html)
-    logger.debug(f"Found {len(parser.links)} links on IR page")
-
     new_links = []
-    for link in parser.links:
+    for link in links:
         abs_url = urljoin(ir_url, link)
         if abs_url in history:
             logger.debug(f"Skipping already downloaded {abs_url}")
