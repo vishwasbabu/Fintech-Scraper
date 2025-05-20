@@ -1,6 +1,6 @@
 # Fintech-Scraper
 
-Scrapes Investor materials from 
+Utilities for downloading investor materials from various Fintech companies.
 
 ---
 
@@ -54,3 +54,23 @@ Scrapes Investor materials from
 
 
 
+
+## Usage
+
+1. Run the scraper to download investor materials:
+
+```bash
+python3 scraper.py
+```
+
+This creates a `scraped_data/` directory with one subfolder per company. Run the script periodically (e.g. using cron) or invoke `schedule_daily()` to keep the data up to date.
+
+2. Start the web UI:
+
+```bash
+uvicorn app:app --reload --port 8000
+```
+
+Open `http://localhost:8000/` in a browser to browse available companies and their files. Market data for public tickers is fetched from Yahoo Finance.
+
+Note: the `push_to_chatgpt` function in `scraper.py` is a placeholder for pushing downloaded files to a custom ChatGPT instance.
