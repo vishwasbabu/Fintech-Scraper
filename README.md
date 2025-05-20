@@ -8,7 +8,7 @@ Utilities for downloading investor materials from various Fintech companies.
 
 | Company               | Ticker Symbol | Exchange | Investor Relations Page                                     |
 | --------------------- | ------------- | -------- | ----------------------------------------------------------- |
-| **Dave Inc.**         | `DAVE`        | NASDAQ   | [investors.dave.com](https://investors.dave.com/)           |
+| **Dave Inc.**         | `DAVE`        | NASDAQ   | [Quarterly results](https://investors.dave.com/financial-information/quarterly-results) |
 | **SoFi Technologies** | `SOFI`        | NASDAQ   | [investors.sofi.com](https://investors.sofi.com/)           |
 | **Upstart Holdings**  | `UPST`        | NASDAQ   | [ir.upstart.com](https://ir.upstart.com/)                   |
 | **LendingClub Corp.** | `LC`          | NYSE     | [ir.lendingclub.com](https://ir.lendingclub.com/)           |
@@ -78,3 +78,12 @@ Note: the `push_to_chatgpt` function in `scraper.py` is a placeholder for pushin
 ## Troubleshooting
 
 If you receive HTTP 403 errors when running the scraper, some sites may block requests without a browser-like user agent. The tool includes a default `User-Agent` header, but you can edit `USER_AGENT` in `scraper.py` if downloads continue to fail.
+
+If some investor pages load content dynamically and the initial request times out, the scraper can optionally fall back to [Playwright](https://playwright.dev). Install it with:
+
+```bash
+pip install playwright
+playwright install
+```
+
+Playwright is only used when standard requests fail, so it is safe to run the scraper without it if you don't need this feature.
