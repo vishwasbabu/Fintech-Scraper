@@ -25,6 +25,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 USER_AGENT = "Mozilla/5.0 (FintechScraper/1.0)"
 HEADERS = {"User-Agent": USER_AGENT}
+TIMEOUT = 10  # seconds
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "scraped_data")
@@ -205,10 +206,14 @@ def save_history(company_dir: str, history: dict) -> None:
 def download_file(url: str, dest: str) -> None:
     logger.debug(f"Downloading {url} -> {dest}")
     req = urllib.request.Request(url, headers=HEADERS)
-    with urllib.request.urlopen(req) as resp, open(dest, "wb") as out:
-        data = resp.read()
-        logger.debug(f"Writing {len(data)} bytes")
-        out.write(data)
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp, open(dest, "wb") as out:
+            data = resp.read()
+            logger.debug(f"Writing {len(data)} bytes")
+            out.write(data)
+    except Exception as e:
+        logger.error(f"Failed download {url}: {e}")
+        raise
 
 
 def push_to_chatgpt(path: str) -> None:
@@ -234,7 +239,7 @@ def scrape_company(company: dict) -> None:
     try:
         logger.debug(f"Requesting IR page {ir_url}")
         req = urllib.request.Request(ir_url, headers=HEADERS)
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
         logger.debug(f"Downloaded {len(html)} bytes from {ir_url}")
     except Exception as e:
