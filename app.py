@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+USER_AGENT = "Mozilla/5.0 (FintechScraper/1.0)"
 DATA_DIR = os.path.join(os.path.dirname(__file__), "scraped_data")
 TRACK_FILE = "downloaded.json"
 
@@ -35,7 +36,8 @@ def fetch_market_data(ticker: str) -> dict | None:
     url = f"https://query1.finance.yahoo.com/v7/finance/quote?symbols={ticker}"
     try:
         import urllib.request
-        with urllib.request.urlopen(url) as resp:
+        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         quote = data.get("quoteResponse", {}).get("result", [])
         if quote:
